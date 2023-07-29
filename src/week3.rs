@@ -1,4 +1,8 @@
-#![allow(unused_variables, dead_code)]
+// #, #!, attribute, PartialEq
+// match
+// let v = 1; println!("{:p}", &v);
+
+//#![allow(unused_variables, dead_code)]
 
 struct Person {
     name: String,
@@ -37,12 +41,14 @@ fn compute_thruster_force() -> PoundsOfForce {
     PoundsOfForce(0.0)
 }
 
+#[allow(unused_variables, dead_code)]
 fn set_thruster_force(force: Newtons) {
     // ...
 }
 
 fn week3_tuple2() {
-    let force = compute_thruster_force();
+    #[allow(unused_variables, dead_code)]
+    let force: PoundsOfForce = compute_thruster_force();
     //set_thruster_force(force); ?? 안돼는디
 }
 
@@ -370,6 +376,7 @@ fn test_visit() {
     assert_eq!(report.blood_pressure_change, Some((-5, -4)));
 }
 
+#[derive(PartialEq, Debug)]
 pub struct Point {
     // add fields
     x: f64,
@@ -410,12 +417,26 @@ impl std::ops::Add<Point> for Point {
     }
 }
 
+// impl std::cmp::PartialEq for Point {
+//     fn eq(&self, other: &Self) -> bool {
+//         self.x == other.x && self.y == other.y
+//     }
+// }
+
 pub struct Polygon {
     // add fields
+    points: Vec<Point>
 }
 
 impl Polygon {
     // add methods
+    pub fn new() -> Polygon {
+        Polygon{points: vec![]}
+    }
+
+    pub fn add_point(&mut self, p: Point) {
+        self.points.push(p);
+    }
 }
 
 pub struct Circle {
@@ -461,8 +482,8 @@ mod tests {
 
     #[test]
     fn test_polygon_left_most_point() {
-        let p1 = Point::new(12, 13);
-        let p2 = Point::new(16, 16);
+        let p1 = Point::new(12.0, 13.0);
+        let p2 = Point::new(16.0, 16.0);
 
         let mut poly = Polygon::new();
         poly.add_point(p1);
@@ -472,15 +493,15 @@ mod tests {
 
     #[test]
     fn test_polygon_iter() {
-        let p1 = Point::new(12, 13);
-        let p2 = Point::new(16, 16);
+        let p1 = Point::new(12.0, 13.0);
+        let p2 = Point::new(16.0, 16.0);
 
         let mut poly = Polygon::new();
         poly.add_point(p1);
         poly.add_point(p2);
 
         let points = poly.iter().cloned().collect::<Vec<_>>();
-        assert_eq!(points, vec![Point::new(12, 13), Point::new(16, 16)]);
+        assert_eq!(points, vec![Point::new(12.0, 13.0), Point::new(16.0, 16.0)]);
     }
 
     #[test]
@@ -502,7 +523,7 @@ mod tests {
     }
 }
 
-#[allow(dead_code)]
+
 fn main() {}
 
 pub fn week3() {
