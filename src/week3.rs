@@ -1,8 +1,7 @@
 // #, #!, attribute, PartialEq
-// match
-// let v = 1; println!("{:p}", &v);
-
 //#![allow(unused_variables, dead_code)]
+// #[derive(Debug, Copy, Clone)]
+// match
 
 struct Person {
     name: String,
@@ -376,7 +375,7 @@ fn test_visit() {
     assert_eq!(report.blood_pressure_change, Some((-5, -4)));
 }
 
-#[derive(PartialEq, Debug)]
+#[derive(PartialEq, Debug, Clone)]
 pub struct Point {
     // add fields
     x: f64,
@@ -437,19 +436,59 @@ impl Polygon {
     pub fn add_point(&mut self, p: Point) {
         self.points.push(p);
     }
+
+    pub fn left_most_point(&mut self) -> Option<Point> {
+        self.points.sort_by(|a, b| a.x.partial_cmp(&b.x).unwrap());
+        match self.points.first() {
+            Some(point) => Some(Point::new(point.x, point.y)),
+            None => None,
+        }
+    }
+
+    pub fn iter(&self) -> core::slice::Iter<Point>{
+       self.points.iter() 
+    }
+
+    pub fn perimeter(&self) -> f64 {
+        let mut value: f64 = 0.0;
+        for i in 0..self.points.len() {
+            let index = i;
+            let next_index = (i + 1) % self.points.len();
+            value += self.points[index].dist(&self.points[next_index]);
+        }
+        return value;
+    }
 }
 
 pub struct Circle {
     // add fields
+    point: Point,
+    radius: f64
 }
 
 impl Circle {
     // add methods
+    pub fn new(point: Point, radius: f64) -> Circle {
+        Circle{point: point, radius:radius}
+    }
+
+    pub fn perimeter(&self) -> f64 {
+        std::f64::consts::PI * self.radius * 2.0
+    }
 }
 
 pub enum Shape {
     Polygon(Polygon),
     Circle(Circle),
+}
+
+impl Shape {
+    pub fn perimeter(shape: &Shape) -> f64 {
+        match shape {
+            Shape::Polygon(poly) => poly.perimeter(),
+            Shape::Circle(circle) => circle.perimeter(),
+        }
+    }
 }
 
 #[cfg(test)]
@@ -482,11 +521,11 @@ mod tests {
 
     #[test]
     fn test_polygon_left_most_point() {
-        let p1 = Point::new(12.0, 13.0);
+        let p1: Point = Point::new(12.0, 13.0);
         let p2 = Point::new(16.0, 16.0);
 
         let mut poly = Polygon::new();
-        poly.add_point(p1);
+        poly.add_point(Point::new(p1.x, p1.y));
         poly.add_point(p2);
         assert_eq!(poly.left_most_point(), Some(p1));
     }
@@ -507,12 +546,12 @@ mod tests {
     #[test]
     fn test_shape_perimeters() {
         let mut poly = Polygon::new();
-        poly.add_point(Point::new(12, 13));
-        poly.add_point(Point::new(17, 11));
-        poly.add_point(Point::new(16, 16));
+        poly.add_point(Point::new(12.0, 13.0));
+        poly.add_point(Point::new(17.0, 11.0));
+        poly.add_point(Point::new(16.0, 16.0));
         let shapes = vec![
-            Shape::from(poly),
-            Shape::from(Circle::new(Point::new(10, 20), 5)),
+            Shape::from(Shape::Polygon(poly)),
+            Shape::from(Shape::Circle(Circle::new(Point::new(10.0, 20.0), 5.0))),
         ];
         let perimeters = shapes
             .iter()
