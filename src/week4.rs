@@ -241,17 +241,40 @@ fn visibility() {
 }
 
 pub fn luhn(cc_number: &str) -> bool {
-    let trim_str = cc_number.trim();
-    if cc_number.is_empty() {
+    let trim_str: String = cc_number.replace(" ", "");
+    if trim_str.is_empty() {
         return false;
     }
-    if cc_number.len() < 2 {
+    if trim_str.len() < 2 {
         return false;
     }
+    let mut result = 0;
+    for (idx, c) in trim_str.chars().rev().enumerate() {
+        let mut cc = match c.to_digit(10) {
+            Some(i) => i,
+            None => return false,
+        };
+        
+        if (idx+1) % 2 == 0 {
+            cc *= 2;
+            while cc >= 10  {
+                cc = cc / 10 + cc % 10;    
+            }
+        }
+
+        result += cc;
+        println!("{idx} {cc} {result}");
+    }
+    // let number = match trim_str.parse::<u32>() 
+
+    // if result <= 0 {
+    //     return false;
+    // }
+
     // for number in cc_number {
     //     number
     // }
-    return false;
+    return result % 10 == 0;
 }
 
 #[test]
@@ -291,6 +314,51 @@ fn test_invalid_cc_number() {
     assert!(!luhn("8273 1232 7352 0569"));
 }
 
+// TODO: remove this when you're done with your implementation.
+
+pub fn prefix_matches(prefix: &str, request_path: &str) -> bool {
+    let m = request_path.contains(prefix);
+    let ss = request_path.split("/");
+    // for s in ss {
+    //     println!("{}", s);
+    // }
+    println!("{}", request_path.contains(prefix));
+    return true;
+}
+
+#[test]
+fn test_matches_without_wildcard() {
+    assert!(prefix_matches("/v1/publishers", "/v1/publishers"));
+    assert!(prefix_matches("/v1/publishers", "/v1/publishers/abc-123"));
+    assert!(prefix_matches("/v1/publishers", "/v1/publishers/abc/books"));
+
+    assert!(!prefix_matches("/v1/publishers", "/v1"));
+    assert!(!prefix_matches("/v1/publishers", "/v1/publishersBooks"));
+    assert!(!prefix_matches("/v1/publishers", "/v1/parent/publishers"));
+}
+
+#[test]
+fn test_matches_with_wildcard() {
+    assert!(prefix_matches(
+        "/v1/publishers/*/books",
+        "/v1/publishers/foo/books"
+    ));
+    assert!(prefix_matches(
+        "/v1/publishers/*/books",
+        "/v1/publishers/bar/books"
+    ));
+    assert!(prefix_matches(
+        "/v1/publishers/*/books",
+        "/v1/publishers/foo/books/book1"
+    ));
+
+    assert!(!prefix_matches("/v1/publishers/*/books", "/v1/publishers"));
+    assert!(!prefix_matches(
+        "/v1/publishers/*/books",
+        "/v1/publishers/foo/booksByAuthor"
+    ));
+}
+
 pub fn week4() {
     if_expression();
     if_let_expression();
@@ -310,4 +378,6 @@ pub fn week4() {
     rc_rc();
     module_module();
     visibility();
+
+    prefix_matches("/v1/publishers", "/v1/publishers/abc-123");
 }
