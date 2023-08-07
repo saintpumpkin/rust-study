@@ -257,7 +257,7 @@ pub fn luhn(cc_number: &str) -> bool {
         
         if (idx+1) % 2 == 0 {
             cc *= 2;
-            while cc >= 10  {
+            while dbg!(cc >= 10)  { // [src\week4.rs:260] cc >= 10 = true
                 cc = cc / 10 + cc % 10;    
             }
         }
