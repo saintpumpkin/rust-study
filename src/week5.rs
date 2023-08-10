@@ -405,31 +405,43 @@ impl Window {
 
 impl Widget for Label {
     fn width(&self) -> usize {
-        unimplemented!()
+        self.label.len()
     }
 
     fn draw_into(&self, buffer: &mut dyn std::fmt::Write) {
-        unimplemented!()
+        let width: usize = self.width();
+        write!(buffer, "{:^width$}", self.label);
     }
 }
 
 impl Widget for Button {
     fn width(&self) -> usize {
-        unimplemented!()
+        self.label.label.len()+2
     }
 
     fn draw_into(&self, buffer: &mut dyn std::fmt::Write) {
-        unimplemented!()
+        write!(buffer, "[ ");
+        self.label.draw_into(buffer);
+        write!(buffer, " ]");
     }
 }
 
 impl Widget for Window {
     fn width(&self) -> usize {
-        unimplemented!()
+        self.inner_width()
     }
 
     fn draw_into(&self, buffer: &mut dyn std::fmt::Write) {
-        unimplemented!()
+        let width: usize = self.width();
+        writeln!(buffer, "+{:-<width$}+", "");
+        writeln!(buffer, "|{:^width$}|", self.title);
+        writeln!(buffer, "+{:=<width$}+", "");
+        for widget in self.widgets.iter() {
+            let mut sub_buffer = String::new();
+            widget.draw_into(&mut sub_buffer);
+            writeln!(buffer, "|{:^width$}|", sub_buffer);
+        }
+        writeln!(buffer, "+{:-<width$}+", "");
     }
 }
 
@@ -467,6 +479,8 @@ fn line_alignment() {
 // | +-----------+                  |
 // +--------------------------------+
 
+// rust click event ??
+
 pub fn week5() {
     generic_data_type();
     monomorphization();
@@ -486,6 +500,14 @@ pub fn week5() {
     add_mul();
     closure();
     closure2();
-    //gui_library();
-    line_alignment();
+
+    println!();
+    let width = 10;
+    println!("left aligned:  |{:/<width$}|", "foo");
+    println!("centered:      |{:/^width$}|", "foo");
+    println!("right aligned: |{:/>width$}|", "foo");
+    println!();
+
+    gui_library();
+    //line_alignment();
 }
