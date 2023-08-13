@@ -1,5 +1,12 @@
 #![allow(unused_imports, unused_variables, dead_code)]
 
+use std::{io, io::SeekFrom, time::Duration};
+use crossterm::{
+    cursor::position,
+    event::{poll, read, DisableMouseCapture, EnableMouseCapture, Event, KeyCode, KeyEvent, KeyEventKind},
+    execute,
+    terminal::{disable_raw_mode, enable_raw_mode},
+};
 // #[derive(Debug)]
 // struct Point<T> {
 //     x: T,
@@ -337,6 +344,10 @@ fn closure2() {
 }
 
 pub trait Widget {
+    fn release(&mut self);
+    fn select(&mut self);
+    fn is_selected(&self) -> bool;
+
     /// Natural width of `self`.
     fn width(&self) -> usize;
 
@@ -353,12 +364,14 @@ pub trait Widget {
 
 pub struct Label {
     label: String,
+    selected: bool,
 }
 
 impl Label {
     fn new(label: &str) -> Label {
         Label {
             label: label.to_owned(),
+            selected: false,
         }
     }
 }
@@ -380,6 +393,7 @@ impl Button {
 pub struct Window {
     title: String,
     widgets: Vec<Box<dyn Widget>>,
+    selected_widget_index: usize,
 }
 
 impl Window {
@@ -387,6 +401,7 @@ impl Window {
         Window {
             title: title.to_owned(),
             widgets: Vec::new(),
+            selected_widget_index: 0,
         }
     }
 
@@ -398,23 +413,117 @@ impl Window {
         std::cmp::max(
             self.title.chars().count(),
             self.widgets.iter().map(|w| w.width()).max().unwrap_or(0),
-        )
+        ) + 2
+    }
+
+    fn select_widget(&mut self, index: usize) {
+        for (i, w) in self.widgets.iter_mut().enumerate() {
+            if i == index {
+                w.select();
+            }
+            else {
+                w.release();
+            }
+        }
+    }
+
+    fn next_widget(&mut self) {
+        self.selected_widget_index = (self.selected_widget_index + 1) % self.widgets.len();
+        self.select_widget(self.selected_widget_index);
+    }
+    // fn execute_widget() {
+
+    // }
+
+    fn read_key(&mut self) -> io::Result<()>  {
+        if poll(Duration::from_millis(1_000))? {
+            //let event = read()?;
+            if let Event::Key(KeyEvent { code, modifiers, kind, state }) = read()? {
+                match (code, kind) {
+                    (KeyCode::Up, KeyEventKind::Press) => {
+                        println!("up");
+                    }
+                    (KeyCode::Down, KeyEventKind::Press) => {
+                        self.next_widget();
+                    }
+                    (KeyCode::Enter, KeyEventKind::Press) => {
+                        println!("enter");
+                    }
+                    _ => {}
+                }
+            }
+        }
+        Ok(())
+        
+        // if let Event::Key(KeyEvent { code, modifiers, kind, state }) = event::read()? {
+        //     match (code, kind) {
+        //         (KeyCode::Up, event::KeyEventKind::Press) => {
+        //             println!("up");
+        //         }
+        //         (KeyCode::Down, event::KeyEventKind::Press) => {
+        //             self.next_widget();
+        //         }
+        //         (KeyCode::Enter, event::KeyEventKind::Press) => {
+        //             println!("enter");
+        //         }
+        //         _ => {}
+        //     }
+        // }
+
+        // Ok(line)
+    }
+
+    fn update(&mut self) {
+        loop {
+            self.read_key();
+            self.draw();
+        }
     }
 }
 
 
 impl Widget for Label {
+    fn release(&mut self) {
+        self.selected = false;
+    }
+
+    fn select(&mut self) {
+        self.selected = true;
+    }
+
+    fn is_selected(&self) -> bool {
+        self.selected
+    }
+
     fn width(&self) -> usize {
         self.label.len()
     }
 
     fn draw_into(&self, buffer: &mut dyn std::fmt::Write) {
-        let width: usize = self.width();
-        write!(buffer, "{:^width$}", self.label);
+        let width: usize = match self.is_selected() {
+            true => self.width() + 2,
+            false => self.width(),
+        };
+        let label: String = match self.is_selected() {
+            true => self.label.clone() + " <",
+            false => self.label.clone(),
+        };
+        write!(buffer, "{:^width$}", label);
     }
 }
 
 impl Widget for Button {
+    fn release(&mut self) {
+        self.label.release();
+    }
+    fn select(&mut self) {
+        self.label.select();
+    }
+
+    fn is_selected(&self) -> bool {
+        self.label.is_selected()
+    }
+
     fn width(&self) -> usize {
         self.label.label.len()+2
     }
@@ -427,6 +536,18 @@ impl Widget for Button {
 }
 
 impl Widget for Window {
+    fn release(&mut self) {
+        println!("")
+    }
+
+    fn select(&mut self) {
+        println!("")
+    }
+
+    fn is_selected(&self) -> bool {
+        false
+    }
+    
     fn width(&self) -> usize {
         self.inner_width()
     }
@@ -452,7 +573,8 @@ fn gui_library() {
         "Click me!",
         Box::new(|| println!("You clicked the button!")),
     )));
-    window.draw();
+    window.select_widget(0);
+    window.update();
 }
 
 // ========
