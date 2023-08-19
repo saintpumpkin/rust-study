@@ -3,22 +3,25 @@ use std::error::Error;
 use std::fmt::{self, Display, Formatter};
 use std::fs::{self, File};
 use std::io::{self, Read};
+use std::mem::size_of_val;
+use std::slice;
 
 fn fn_panic() {
     let v = vec![10, 20, 30];
-    //println!("v[100]: {}", v[100]);
+    println!("v[100]: {}", v[100]);
 }
 
 fn stack_backward() {
     let result = panic::catch_unwind(|| {
-        //println!("hello!");
+        println!("hello!");
     });
-    //assert!(result.is_ok());
+    //println!("{:?}", result);
+    assert!(result.is_ok());
     
     let result = panic::catch_unwind(|| {
-        //panic!("oh no!");
+        panic!("oh no!");
     });
-    //assert!(result.is_err());
+    assert!(result.is_err());
 }
 
 fn structured_error_handling_using_results() {
@@ -187,8 +190,6 @@ mod tests {
 /// Shortens a string to the given length.
 ///
 /// ```
-/// pub mod week6;
-/// use week6::shorten_string;
 /// assert_eq!(shorten_string("Hello World", 5), "Hello");
 /// assert_eq!(shorten_string("Hello World", 20), "Hello World");
 /// ```
@@ -196,11 +197,126 @@ pub fn shorten_string(s: &str, length: usize) -> &str {
     &s[..std::cmp::min(length, s.len())]
 }
 
+fn raw_pointer_reverse_reference() {
+    let mut num = 5;
+
+    let r1 = &mut num as *mut i32;
+    let r2 = r1 as *const i32;
+
+    // Safe because r1 and r2 were obtained from references and so are
+    // guaranteed to be non-null and properly aligned, the objects underlying
+    // the references from which they were obtained are live throughout the
+    // whole unsafe block, and they are not accessed either through the
+    // references or concurrently through any other pointers.
+    unsafe {
+        println!("r1 is: {}", *r1);
+        *r1 = 10;
+        println!("r2 is: {}", *r2);
+    }
+}
+
+static HELLO_WORLD: &str = "Hello, world!";
+fn static_variable() {
+    println!("HELLO_WORLD: {HELLO_WORLD}");
+}
+
+static mut COUNTER: u32 = 0;
+fn add_to_counter(inc: u32) {
+    unsafe { COUNTER += inc; }  // 잠재적 데이터 경합!
+}
+
+fn use_add_to_counter() {
+    add_to_counter(42);
+
+    unsafe { println!("COUNTER: {COUNTER}"); }  // 잠재적 데이터 경합!
+}
+
+#[repr(C)]
+union MyUnion {
+    i: u8,
+    b: bool,
+}
+
+fn fn_union() {
+    let u = MyUnion { i: 42 };
+    println!("int: {}", unsafe { u.i });
+    println!("bool: {}", unsafe { u.b });  // Undefined behavior!
+}
+
+fn count_chars(s: &str) -> usize {
+    s.chars().map(|_| 1).sum()
+}
+
+fn call_insecure_function() {
+    let emojis = "🗻∈🌏";
+
+    // Safe because the indices are in the correct order, within the bounds of
+    // the string slice, and lie on UTF-8 sequence boundaries.
+    unsafe {
+        println!("emoji: {}", emojis.get_unchecked(0..4));
+        println!("emoji: {}", emojis.get_unchecked(4..7));
+        println!("emoji: {}", emojis.get_unchecked(7..11));
+    }
+
+    println!("char count: {}", count_chars(unsafe { emojis.get_unchecked(0..7) }));
+
+    // Not upholding the UTF-8 encoding requirement breaks memory safety!
+    // println!("emoji: {}", unsafe { emojis.get_unchecked(0..3) });
+    // println!("char count: {}", count_chars(unsafe { emojis.get_unchecked(0..3) }));
+}
+
+unsafe fn swap(a: *mut u8, b: *mut u8) {
+    let temp = *a;
+    *a = *b;
+    *b = temp;
+}
+
+fn to_create_an_unsafe_function() {
+    let mut a = 42;
+    let mut b = 66;
+
+    // Safe because ...
+    unsafe {
+        swap(&mut a, &mut b);
+    }
+
+    println!("a = {}, b = {}", a, b);
+}
+
+extern "C" {
+    fn abs(input: i32) -> i32;
+}
+
+fn call_external_code() {
+    unsafe {
+        // Undefined behavior if abs misbehaves.
+        println!("Absolute value of -3 according to C: {}", abs(-3));
+    }
+}
+
+pub unsafe trait AsBytes {
+    fn as_bytes(&self) -> &[u8] {
+        unsafe {
+            slice::from_raw_parts(self as *const Self as *const u8, size_of_val(self))
+        }
+    }
+}
+
+// Safe because u32 has a defined representation and no padding.
+unsafe impl AsBytes for u32 {}
+
 pub fn week6() {
-    fn_panic();
+    //fn_panic();
     stack_backward();
     structured_error_handling_using_results();
     error_propagation_using_question_mark();
     if_the_error_type_is_different();
     //dynamic_error_type();
+    raw_pointer_reverse_reference();
+    static_variable();
+    use_add_to_counter();
+    fn_union();
+    call_insecure_function();
+    to_create_an_unsafe_function();
+    call_external_code();
 }
