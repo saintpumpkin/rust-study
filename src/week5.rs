@@ -347,6 +347,7 @@ pub trait Widget {
     fn release(&mut self);
     fn select(&mut self);
     fn is_selected(&self) -> bool;
+    fn execute(&mut self);
 
     /// Natural width of `self`.
     fn width(&self) -> usize;
@@ -448,6 +449,7 @@ impl Window {
                     }
                     (KeyCode::Enter, KeyEventKind::Press) => {
                         println!("enter");
+                        self.execute();
                     }
                     _ => {}
                 }
@@ -495,6 +497,10 @@ impl Widget for Label {
         self.selected
     }
 
+    fn execute(&mut self) {
+        println!("{}", self.label);
+    }
+
     fn width(&self) -> usize {
         self.label.len()
     }
@@ -524,6 +530,10 @@ impl Widget for Button {
         self.label.is_selected()
     }
 
+    fn execute(&mut self) {
+        self.callback.as_mut()();
+    }
+
     fn width(&self) -> usize {
         self.label.label.len()+2
     }
@@ -546,6 +556,16 @@ impl Widget for Window {
 
     fn is_selected(&self) -> bool {
         false
+    }
+
+    fn execute(&mut self) {
+        // for widget in self.widgets.iter_mut() {
+        //     widget.execute();
+        // }
+        match self.widgets.get_mut(self.selected_widget_index) {
+            Some(w) => w.execute(),
+            None => println!("no selected widget"),
+        }
     }
     
     fn width(&self) -> usize {
