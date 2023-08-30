@@ -24,28 +24,28 @@ pub struct SmpInput<T> {
 // }
 
 impl<T> SmpInput<T> {
-    fn new() -> SmpInput<T> {
+    pub fn new() -> SmpInput<T> {
         SmpInput {
             key_map: HashMap::new(),
         }
     }
 
-    fn add_key(&mut self, key: &KeyCode, callback: Box<dyn Fn(&mut T)>) {
+    pub fn add_key(&mut self, key: &KeyCode, callback: Box<dyn Fn(&mut T)>) {
         self.key_map.insert(key.clone(), callback);
     }
 
-    fn get(&self, key: &KeyCode) -> Option<&Box<dyn Fn(&mut T)>> {
+    pub fn get(&self, key: &KeyCode) -> Option<&Box<dyn Fn(&mut T)>> {
         self.key_map.get(key)
     }
 
-    fn on_input_key(&self, key: &KeyCode, arg: &mut T) {
+    pub fn on_input_key(&self, key: &KeyCode, arg: &mut T) {
         match self.get(key) {
             Some(callback) => callback(arg),
             None => println!("key callback not exists"),
         };
     }
 
-    fn update(&self, arg: &mut T) -> io::Result<()> {
+    pub fn update(&self, arg: &mut T) -> io::Result<()> {
         if poll(Duration::from_millis(1_00))? {
             if let Event::Key(KeyEvent { code, modifiers, kind, state }) = read()? {
                 match (kind) {

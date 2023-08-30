@@ -9,7 +9,7 @@ pub mod week7;
 pub mod week8;
 pub mod smp_input;
 pub mod smp_render;
-
+pub mod smp;
 fn main() {
     println!("===========================================================");
     println!("========================== week2 ==========================");
@@ -64,5 +64,5 @@ fn main() {
     println!("=========================== smp ===========================");
     println!("===========================================================");
     //smp_input::run();
-    //smp_render::run();
+    smp_render::run();
 }
