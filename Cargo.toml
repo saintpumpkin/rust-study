@@ -11,3 +11,6 @@ console = "0.15.7"
 dialoguer = "0.10.4"
 futures = "0.3.28"
 tokio = { version = "1", features = ["full"] }
+anyhow = "1.0.75"
+reqwest = "0.11.20"
+async-trait = "0.1.73"
