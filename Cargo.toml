@@ -10,7 +10,10 @@ crossterm = "0.27.0"
 console = "0.15.7"
 dialoguer = "0.10.4"
 futures = "0.3.28"
-tokio = { version = "1", features = ["full"] }
+futures-util = "0.3.28"
+tokio = { version = "1.28.1", features = ["full"] }
+tokio-websockets = "0.3.2"
 anyhow = "1.0.75"
 reqwest = "0.11.20"
+http = "0.2.9"
 async-trait = "0.1.73"
