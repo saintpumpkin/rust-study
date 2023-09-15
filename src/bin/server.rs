@@ -1,3 +1,5 @@
+//#[path = "src/bin/smp.rs"]
+//pub mod smp;
 use futures_util::sink::SinkExt;
 use std::error::Error;
 use std::net::SocketAddr;
@@ -33,23 +35,6 @@ async fn handle_connection(
             }
         }
     }
-    // let mut rx2 = bcast_tx.subscribe();
-    // let r = rx2.recv().await.unwrap();
-
-    //let s = ws_stream.next().await;
-    //ws_stream.send(s.unwrap());
-    // tokio::select! {
-    //     line = ws_stream.next() => if let Some(a) = line {
-    //         // let Ok(msg) = a?;
-    //         println!("{:?}", a);
-    //         ws_stream.send(a.unwrap()).await?
-    //         // match a {
-    //         //     Ok(msg) => ws_stream.send(msg),
-    //         //     Err(_)
-    //         // };
-    //     }
-    // }
-
 }
 
 #[tokio::main]
@@ -58,6 +43,11 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
 
     let listener = TcpListener::bind("127.0.0.1:2000").await?;
     println!("listening on port 2000");
+
+    let bcast_tx = bcast_tx.clone();
+    tokio::spawn(async move {
+        smp::run_loop(bcast_tx);
+    });
 
     loop {
         let (socket, addr) = listener.accept().await?;

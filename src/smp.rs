@@ -1,12 +1,14 @@
-use std::io;
-use std::thread;
-use std::time::Duration;
-
+use tokio::sync::broadcast::{channel, Receiver, Sender};
+use tokio_websockets::{Message, ServerBuilder, WebsocketStream};
 use crate::smp_input::SmpInput;
 use crate::smp_render::SmpRender;
 use crossterm::{
     event::{KeyCode},
 };
+
+use std::io;
+use std::thread;
+use std::time::Duration;
 
 pub struct SmpController {
     x: usize,
@@ -76,15 +78,17 @@ pub struct Smp {
     controller: SmpController,
     input: SmpInput<SmpController>,
     render: SmpRender,
+    bcast_tx: Sender<String>,
 }
 
 impl Smp {
-    fn new() -> Smp {
+    fn new(bcast_tx: Sender<String>) -> Smp {
         let render = SmpRender::new();
         Smp {
             controller: SmpController::new(render.get_width(), render.get_height()),
             input: SmpInput::<SmpController>::new(),
             render: render,
+            bcast_tx: bcast_tx
         }
     }
 
@@ -97,19 +101,26 @@ impl Smp {
     }
 
     fn update(&mut self) {
-        loop {
-            self.input.update(&mut self.controller);
-            self.controller.update(&mut self.render);
-            self.render.render();
-            thread::sleep(Duration::from_millis(10));
-        }
+        self.input.update(&mut self.controller);
+        self.controller.update(&mut self.render);
+        self.render.render();
+        self.bcast_tx.send("Move".into());
     }
 
     
 }
 
-pub fn run() {
-    let mut smp = Smp::new();
+pub fn run_loop(bcast_tx: Sender<String>) {
+    let mut smp = Smp::new(bcast_tx);
     smp.init();
-    smp.update();
+    loop {
+        smp.update();
+        thread::sleep(Duration::from_millis(10));
+    }
 }
+
+// pub fn run() {
+//     let mut smp = Smp::new();
+//     smp.init();
+//     smp.update();
+// }
