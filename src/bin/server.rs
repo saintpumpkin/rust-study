@@ -6,6 +6,7 @@ use std::net::SocketAddr;
 use tokio::net::{TcpListener, TcpStream};
 use tokio::sync::broadcast::{channel, Sender};
 use tokio_websockets::{Message, ServerBuilder, WebsocketStream};
+pub mod sm;
 
 async fn handle_connection(
     addr: SocketAddr,
@@ -46,7 +47,7 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
 
     let bcast_tx = bcast_tx.clone();
     tokio::spawn(async move {
-        smp::run_loop(bcast_tx);
+        sm::run_loop();
     });
 
     loop {

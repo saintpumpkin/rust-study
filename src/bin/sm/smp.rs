@@ -1,7 +1,8 @@
 use tokio::sync::broadcast::{channel, Receiver, Sender};
 use tokio_websockets::{Message, ServerBuilder, WebsocketStream};
-use crate::smp_input::SmpInput;
-use crate::smp_render::SmpRender;
+use crate::sm::smp_input::SmpInput;
+use crate::sm::smp_render::SmpRender;
+
 use crossterm::{
     event::{KeyCode},
 };
@@ -57,6 +58,14 @@ impl SmpController {
         };
     }
 
+    pub fn get_x(&self) -> usize {
+        self.x
+    }
+
+    pub fn get_y(&self) -> usize {
+        self.y
+    }
+
     fn auto_movement(&mut self) {
         let mut cur_x: i32 = self.x as i32;
         if cur_x == 70 {
@@ -78,21 +87,21 @@ pub struct Smp {
     controller: SmpController,
     input: SmpInput<SmpController>,
     render: SmpRender,
-    bcast_tx: Sender<String>,
+    //bcast_tx: Sender<String>,
 }
 
 impl Smp {
-    fn new(bcast_tx: Sender<String>) -> Smp {
+    pub fn new() -> Smp {
         let render = SmpRender::new();
         Smp {
             controller: SmpController::new(render.get_width(), render.get_height()),
             input: SmpInput::<SmpController>::new(),
             render: render,
-            bcast_tx: bcast_tx
+            //bcast_tx: bcast_tx
         }
     }
 
-    fn init(&mut self) {
+    pub fn init(&mut self) {
         self.input.add_key(&KeyCode::Enter, Box::new(|arg| {println!("Enter!!");}));
         self.input.add_key(&KeyCode::Up, Box::new(|arg| {arg.move_up(); }));
         self.input.add_key(&KeyCode::Down, Box::new(|arg| {arg.move_down(); }));
@@ -100,25 +109,25 @@ impl Smp {
         self.input.add_key(&KeyCode::Left, Box::new(|arg| {arg.move_left(); }));
     }
 
-    fn update(&mut self) {
+    pub fn update(&mut self) -> Option<(usize, usize)> {
         self.input.update(&mut self.controller);
         self.controller.update(&mut self.render);
         self.render.render();
-        self.bcast_tx.send("Move".into());
+        //self.bcast_tx.send("Move".into());
+        Some((self.controller.get_x(), self.controller.get_y()))
     }
 
     
 }
 
-pub fn run_loop(bcast_tx: Sender<String>) {
-    let mut smp = Smp::new(bcast_tx);
+pub fn run_loop() {
+    let mut smp = Smp::new();
     smp.init();
     loop {
         smp.update();
         thread::sleep(Duration::from_millis(10));
     }
 }
-
 // pub fn run() {
 //     let mut smp = Smp::new();
 //     smp.init();
